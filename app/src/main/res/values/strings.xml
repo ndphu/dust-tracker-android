@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">DustTracker</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="prompt_username">Username</string>
+    <string name="prompt_password">Password (optional)</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_username">This username is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="join_group">Join Group</string>
+    <string name="group_code">Group Code</string>
+    <string name="group_password_optional">Group password (optional)</string>
+    <string name="group_name">Group Name</string>
+    <string name="create_group">Create Group</string>
+    <string name="create">Create</string>
+    <string name="API_BASE_URL">http://192.168.137.1:8080/api</string>
+    <!--    <string name="API_BASE_URL">https://swdcore-01.ddns.net/api</string>-->
+    <string name="API_LOGIN_URL">/auth/login</string>
+    <string name="API_REGISTER_URL">/auth/register</string>
+    <string name="API_CREATE_GROUP">/groups</string>
+    <string name="API_RETRIEVE_GROUP">/group/</string>
+    <string name="API_JOIN_GROUP">/group/join</string>
+</resources>
