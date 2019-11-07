@@ -21,14 +21,16 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 public class HttpHelper {
     private static final String TAG = HttpHelper.class.getSimpleName();
-    private static final Gson GSON = new GsonBuilder().create();
     public static AtomicReference<String> JWT = new AtomicReference<>();
 
     private static OkHttpClient getUnsafeOkHttpClient() {
         try {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.level(HttpLoggingInterceptor.Level.BASIC);
             final TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         @Override
@@ -56,6 +58,7 @@ public class HttpHelper {
 
             return new OkHttpClient.Builder()
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                    .addInterceptor(logging)
                     .hostnameVerifier(new HostnameVerifier() {
                         @Override
                         public boolean verify(String hostname, SSLSession session) {
@@ -73,14 +76,14 @@ public class HttpHelper {
 
         Request.Builder builder = new Request.Builder()
                 .url(url)
-                .post(RequestBody.create(MediaType.get("application/json"), GSON.toJson(data)));
+                .post(RequestBody.create(MediaType.get("application/json"), GsonUtils.GSON.toJson(data)));
         if (JWT.get() != null) {
             builder.addHeader("Authorization", JWT.get());
         }
         Response response = client.newCall(builder.build()).execute();
         String body = response.body().string();
         Log.i(TAG, body);
-        return GSON.fromJson(body, responseClass);
+        return GsonUtils.GSON.fromJson(body, responseClass);
     }
 
     public static <T> T get(String url, Class<T> responseClass) throws Exception {
@@ -95,7 +98,7 @@ public class HttpHelper {
         }
         String body = response.body().string();
         Log.i(TAG, body);
-        return GSON.fromJson(body, responseClass);
+        return GsonUtils.GSON.fromJson(body, responseClass);
     }
 
 

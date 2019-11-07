@@ -6,4 +6,12 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         app:showAsAction="never"/>
+  <item android:id="@+id/action_leave_group"
+      android:title="@string/leave_group"
+      android:orderInCategory="100"
+      app:showAsAction="never"/>
+  <item android:id="@+id/action_logout"
+      android:title="@string/logout"
+      android:orderInCategory="100"
+      app:showAsAction="never"/>
 </menu>

@@ -48,6 +48,7 @@ public class LoginFragment extends Fragment {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private LoginFragmentInteractionListener listener;
 
     @Nullable
     @Override
@@ -81,6 +82,22 @@ public class LoginFragment extends Fragment {
 
         mLoginFormView = view.findViewById(R.id.login_form);
         mProgressView = view.findViewById(R.id.login_progress);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        this.listener = ((LoginFragmentInteractionListener)context);
+    }
+
+    @Override
+    public void onDetach() {
+        this.listener = null;
+        super.onDetach();
+    }
+
+    public interface LoginFragmentInteractionListener {
+        void onLoginSuccess(LoginResponse response);
     }
 
     private void attemptLogin() {
@@ -218,9 +235,15 @@ public class LoginFragment extends Fragment {
                 appPrefs.putString("JWT", success.getToken());
                 appPrefs.putString("remembered_username", mUsername);
                 appPrefs.putString("remembered_password", mPassword);
+                appPrefs.putString("userId", success.getUser().getId());
+                appPrefs.putString("username", success.getUser().getUsername());
                 HttpHelper.JWT.set(success.getToken());
                 appPrefs.apply();
                 //startActivity(new Intent(LoginFragment.this, MainActivity.class));
+
+                if (LoginFragment.this.listener != null) {
+                    LoginFragment.this.listener.onLoginSuccess(success);
+                }
             }
         }
 

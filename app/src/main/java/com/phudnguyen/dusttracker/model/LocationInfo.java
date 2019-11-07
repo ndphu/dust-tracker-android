@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.Date;
 
-public class Location {
+public class LocationInfo {
     private String userId;
     private String username;
     private String groupId;

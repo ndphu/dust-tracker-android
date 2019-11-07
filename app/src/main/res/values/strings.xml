@@ -24,4 +24,7 @@
     <string name="API_CREATE_GROUP">/groups</string>
     <string name="API_RETRIEVE_GROUP">/group/</string>
     <string name="API_JOIN_GROUP">/group/join</string>
+    <string name="MESSAGE_BROKER">tcp://192.168.137.1:1883</string>
+    <string name="logout">Logout</string>
+    <string name="leave_group">Leave Group</string>
 </resources>
