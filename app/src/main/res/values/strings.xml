@@ -17,14 +17,16 @@
     <string name="group_name">Group Name</string>
     <string name="create_group">Create Group</string>
     <string name="create">Create</string>
-    <string name="API_BASE_URL">http://192.168.137.1:8080/api</string>
+<!--    <string name="MESSAGE_BROKER">tcp://192.168.137.1:1883</string>-->
+<!--    <string name="API_BASE_URL">http://192.168.137.1:8080/api</string>-->
+    <string name="MESSAGE_BROKER">tcp://swdcore-01.ddns.net:1883</string>
+    <string name="API_BASE_URL">https://dust-api.cfapps.io/api</string>
     <!--    <string name="API_BASE_URL">https://swdcore-01.ddns.net/api</string>-->
     <string name="API_LOGIN_URL">/auth/login</string>
     <string name="API_REGISTER_URL">/auth/register</string>
     <string name="API_CREATE_GROUP">/groups</string>
     <string name="API_RETRIEVE_GROUP">/group/</string>
     <string name="API_JOIN_GROUP">/group/join</string>
-    <string name="MESSAGE_BROKER">tcp://192.168.137.1:1883</string>
     <string name="logout">Logout</string>
     <string name="leave_group">Leave Group</string>
 </resources>

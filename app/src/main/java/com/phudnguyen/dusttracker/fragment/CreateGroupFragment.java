@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,8 @@ import androidx.fragment.app.Fragment;
 import com.phudnguyen.dusttracker.R;
 import com.phudnguyen.dusttracker.http.HttpHelper;
 import com.phudnguyen.dusttracker.model.CreateGroupResponse;
+import com.phudnguyen.dusttracker.model.Group;
+import com.phudnguyen.dusttracker.utils.AppPrefs;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,7 +31,10 @@ public class CreateGroupFragment extends Fragment {
 
     private EditText mGroupPassword;
     private EditText mGroupName;
-    CreateGroupTask task;
+    private CreateGroupTask mCreateGroupTask;
+    private CreateGroupFragmentListener mListener;
+    private ProgressBar mCreateGroupProgress;
+    private View mCreateGroupForm;
 
     public CreateGroupFragment() {
     }
@@ -49,6 +55,8 @@ public class CreateGroupFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mGroupName = view.findViewById(R.id.group_name);
         mGroupPassword = view.findViewById(R.id.group_password);
+        mCreateGroupForm = view.findViewById(R.id.create_group_form);
+        mCreateGroupProgress = view.findViewById(R.id.create_group_progress);
 
         view.findViewById(R.id.btn_create_group).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,7 +67,7 @@ public class CreateGroupFragment extends Fragment {
     }
 
     private void createGroup() {
-        if (task != null) {
+        if (mCreateGroupTask != null) {
             return;
         }
 
@@ -68,21 +76,26 @@ public class CreateGroupFragment extends Fragment {
             return;
         }
 
-        task = new CreateGroupTask(mGroupName.getText().toString(), mGroupPassword.getText().toString());
-        task.execute();
+        mCreateGroupTask = new CreateGroupTask(mGroupName.getText().toString(), mGroupPassword.getText().toString());
+        mCreateGroupTask.execute();
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
-        actionBar.setTitle("Create Group");
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setHomeButtonEnabled(true);
+        if (actionBar != null) {
+            actionBar.setTitle("Create Group");
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeButtonEnabled(true);
+        }
+
+        mListener = (CreateGroupFragmentListener) getActivity();
     }
 
     @Override
     public void onDetach() {
+        mListener = null;
         super.onDetach();
     }
 
@@ -94,6 +107,13 @@ public class CreateGroupFragment extends Fragment {
         public CreateGroupTask(String groupName, String groupPassword) {
             this.groupName = groupName;
             this.groupPassword = groupPassword;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mCreateGroupProgress.setVisibility(View.VISIBLE);
+            mCreateGroupForm.setVisibility(View.GONE);
         }
 
         @Override
@@ -115,6 +135,7 @@ public class CreateGroupFragment extends Fragment {
         @Override
         protected void onPostExecute(CreateGroupResponse createGroupResponse) {
             super.onPostExecute(createGroupResponse);
+
             if (createGroupResponse == null) {
                 mGroupName.setError("Error occur, please try again");
                 return;
@@ -125,11 +146,17 @@ public class CreateGroupFragment extends Fragment {
                 return;
             }
             mGroupName.setError(null);
-
-            getActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_placeholder, GroupDetailsFragment.newInstance(createGroupResponse.getGroup().getId()))
-                    .commit();
+            Group group = createGroupResponse.getGroup();
+            AppPrefs.setGroupId(getActivity(), group.getId());
+            if (mListener != null) {
+                mListener.onCreateGroupSuccess(group);
+            }
+            mCreateGroupProgress.setVisibility(View.GONE);
+            mCreateGroupForm.setVisibility(View.VISIBLE);
         }
+    }
+
+    public interface CreateGroupFragmentListener {
+        void onCreateGroupSuccess(Group group);
     }
 }

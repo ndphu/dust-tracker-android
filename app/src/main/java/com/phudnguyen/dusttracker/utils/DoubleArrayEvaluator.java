@@ -1,4 +1,4 @@
-package com.phudnguyen.dusttracker.http;
+package com.phudnguyen.dusttracker.utils;
 
 import android.animation.TypeEvaluator;
 

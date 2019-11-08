@@ -1,6 +1,5 @@
 package com.phudnguyen.dusttracker.service;
 
-import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,19 +8,13 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
-
-import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -30,14 +23,12 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.phudnguyen.dusttracker.MainActivity;
 import com.phudnguyen.dusttracker.R;
-import com.phudnguyen.dusttracker.http.GsonUtils;
+import com.phudnguyen.dusttracker.utils.AppPrefs;
+import com.phudnguyen.dusttracker.utils.GsonUtils;
 import com.phudnguyen.dusttracker.model.LocationInfo;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -73,8 +64,8 @@ public class LocationUpdateService extends Service implements MqttCallbackExtend
     public void onCreate() {
         super.onCreate();
         initMQTTClientOpts();
-        final SharedPreferences appPrefs = getSharedPreferences("appPrefs", Context.MODE_PRIVATE);
-        final String groupId = appPrefs.getString("currentGroupId", null);
+//        final SharedPreferences appPrefs = getSharedPreferences("appPrefs", Context.MODE_PRIVATE);
+        final String groupId = AppPrefs.getGroupId(this);
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         locationCallback = new LocationCallback() {
             @Override
@@ -86,18 +77,19 @@ public class LocationUpdateService extends Service implements MqttCallbackExtend
                 for (Location location : locationResult.getLocations()) {
                     Log.i(TAG, "Location Provider: " + location.getProvider());
                     LocationInfo loc = new LocationInfo();
-                    loc.setUserId(appPrefs.getString("userId", null));
-                    loc.setUsername(appPrefs.getString("username", null));
+                    loc.setUserId(AppPrefs.getUserId(LocationUpdateService.this));
+                    loc.setUsername(AppPrefs.getUsername(LocationUpdateService.this));
                     loc.setGroupId(groupId);
                     loc.setLatitude(location.getLatitude());
                     loc.setLongitude(location.getLongitude());
                     loc.setTimestamp(new Date());
 
                     String payload = GsonUtils.GSON.toJson(loc);
-                    Log.i(TAG, "Sending location data: " + payload);
+                    String topic = "/metal_head/" + groupId + "/gps";
+                    Log.i(TAG, "Sending to topic " + topic + " location data " + payload);
 
                     try {
-                        mqttClient.publish("/metal_head/" + groupId + "/gps", payload.getBytes(Charset.forName("UTF-8")), 0, false);
+                        mqttClient.publish(topic, payload.getBytes(Charset.forName("UTF-8")), 0, false);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
@@ -214,7 +206,7 @@ public class LocationUpdateService extends Service implements MqttCallbackExtend
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
         Toast.makeText(this, "MQTT Connection Success", Toast.LENGTH_LONG).show();
-        String groupId = getSharedPreferences("appPrefs", MODE_PRIVATE).getString("currentGroupId", null);
+        String groupId =AppPrefs.getGroupId(this);
         if (groupId == null)
             return;
         try {

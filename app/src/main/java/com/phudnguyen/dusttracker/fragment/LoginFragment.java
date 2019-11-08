@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.google.gson.Gson;
@@ -30,6 +31,7 @@ import com.phudnguyen.dusttracker.R;
 import com.phudnguyen.dusttracker.http.HttpHelper;
 import com.phudnguyen.dusttracker.model.LoginResponse;
 import com.phudnguyen.dusttracker.model.RegisterResponse;
+import com.phudnguyen.dusttracker.utils.AppPrefs;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -87,6 +89,7 @@ public class LoginFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        ((AppCompatActivity) context).getSupportActionBar().setTitle("Login");
         this.listener = ((LoginFragmentInteractionListener)context);
     }
 
@@ -230,17 +233,8 @@ public class LoginFragment extends Fragment {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
             } else {
-                SharedPreferences.Editor appPrefs =
-                    getActivity().getSharedPreferences("appPrefs", Context.MODE_PRIVATE).edit();
-                appPrefs.putString("JWT", success.getToken());
-                appPrefs.putString("remembered_username", mUsername);
-                appPrefs.putString("remembered_password", mPassword);
-                appPrefs.putString("userId", success.getUser().getId());
-                appPrefs.putString("username", success.getUser().getUsername());
+                AppPrefs.saveLoginSuccess(getActivity(), success);
                 HttpHelper.JWT.set(success.getToken());
-                appPrefs.apply();
-                //startActivity(new Intent(LoginFragment.this, MainActivity.class));
-
                 if (LoginFragment.this.listener != null) {
                     LoginFragment.this.listener.onLoginSuccess(success);
                 }

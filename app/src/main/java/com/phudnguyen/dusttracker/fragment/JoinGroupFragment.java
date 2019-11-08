@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 
 
 import androidx.annotation.NonNull;
@@ -17,7 +18,9 @@ import androidx.fragment.app.Fragment;
 
 import com.phudnguyen.dusttracker.R;
 import com.phudnguyen.dusttracker.http.HttpHelper;
+import com.phudnguyen.dusttracker.model.Group;
 import com.phudnguyen.dusttracker.model.JoinResponse;
+import com.phudnguyen.dusttracker.utils.AppPrefs;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,9 +33,11 @@ public class JoinGroupFragment extends Fragment {
 
     private EditText mGroupCode;
     private EditText mGroupPassword;
-    private AsyncTask mAsyncTask;
     private JoinGroupTask joinGroupTask;
     private ActionBar mActionBar;
+    private ProgressBar mJoinGroupProgress;
+    private View mJoinGroupForm;
+    private JoinGroupFragmentListener mListener;
 
     public JoinGroupFragment() {
     }
@@ -40,12 +45,15 @@ public class JoinGroupFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_main, container, false);
+        return inflater.inflate(R.layout.fragment_join_group, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        mJoinGroupProgress = view.findViewById(R.id.join_group_progress);
+        mJoinGroupForm = view.findViewById(R.id.join_group_form);
 
         mGroupCode = view.findViewById(R.id.group_code);
         mGroupPassword = view.findViewById(R.id.group_password);
@@ -70,6 +78,18 @@ public class JoinGroupFragment extends Fragment {
         super.onAttach(context);
 
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        mListener = (JoinGroupFragmentListener) getActivity();
+    }
+
+    @Override
+    public void onDetach() {
+        mListener = null;
+        super.onDetach();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -80,10 +100,10 @@ public class JoinGroupFragment extends Fragment {
     }
 
     private void createGroup() {
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_placeholder, new CreateGroupFragment())
-                .addToBackStack(null)
-                .commit();
+        if (mListener != null) {
+            mListener.onCreateGroupClick();
+        }
+
     }
 
     private void joinGroup() {
@@ -108,6 +128,13 @@ public class JoinGroupFragment extends Fragment {
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mJoinGroupForm.setVisibility(View.GONE);
+            mJoinGroupProgress.setVisibility(View.VISIBLE);
+        }
+
+        @Override
         protected JoinResponse doInBackground(Void... voids) {
             Map<String, String> joinRequest = new HashMap<>();
             joinRequest.put("groupCode", code);
@@ -124,6 +151,8 @@ public class JoinGroupFragment extends Fragment {
         @Override
         protected void onPostExecute(JoinResponse joinResponse) {
             super.onPostExecute(joinResponse);
+            mJoinGroupForm.setVisibility(View.VISIBLE);
+            mJoinGroupProgress.setVisibility(View.GONE);
             mGroupPassword.setError(null);
             mGroupCode.setError(null);
             if (joinResponse == null) {
@@ -140,13 +169,17 @@ public class JoinGroupFragment extends Fragment {
                         break;
                 }
             } else {
-                getActivity().getSharedPreferences("appPrefs", Context.MODE_PRIVATE).edit()
-                        .putString("currentGroupId", joinResponse.getGroup().getId())
-                        .apply();
-                getActivity().getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_placeholder, GroupDetailsFragment.newInstance(joinResponse.getGroup().getId()))
-                        .commit();
+                AppPrefs.setGroupId(getActivity(), joinResponse.getGroup().getId());
+                if (mListener != null) {
+                    mListener.onJoinGroupSuccess(joinResponse.getGroup());
+                }
             }
         }
+    }
+
+    public interface JoinGroupFragmentListener {
+        void onCreateGroupClick();
+
+        void onJoinGroupSuccess(Group group);
     }
 }

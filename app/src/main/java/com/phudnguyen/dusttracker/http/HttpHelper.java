@@ -1,9 +1,6 @@
 package com.phudnguyen.dusttracker.http;
 
-import android.util.Log;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.phudnguyen.dusttracker.utils.GsonUtils;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -30,7 +27,7 @@ public class HttpHelper {
     private static OkHttpClient getUnsafeOkHttpClient() {
         try {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.level(HttpLoggingInterceptor.Level.BASIC);
+            logging.level(HttpLoggingInterceptor.Level.BODY);
             final TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         @Override
@@ -76,13 +73,12 @@ public class HttpHelper {
 
         Request.Builder builder = new Request.Builder()
                 .url(url)
-                .post(RequestBody.create(MediaType.get("application/json"), GsonUtils.GSON.toJson(data)));
+                .post(RequestBody.create(GsonUtils.GSON.toJson(data), MediaType.get("application/json")));
         if (JWT.get() != null) {
             builder.addHeader("Authorization", JWT.get());
         }
         Response response = client.newCall(builder.build()).execute();
         String body = response.body().string();
-        Log.i(TAG, body);
         return GsonUtils.GSON.fromJson(body, responseClass);
     }
 
@@ -97,7 +93,6 @@ public class HttpHelper {
             return null;
         }
         String body = response.body().string();
-        Log.i(TAG, body);
         return GsonUtils.GSON.fromJson(body, responseClass);
     }
 

@@ -17,15 +17,23 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
+import com.phudnguyen.dusttracker.fragment.CreateGroupFragment;
 import com.phudnguyen.dusttracker.fragment.GroupDetailsFragment;
 import com.phudnguyen.dusttracker.fragment.JoinGroupFragment;
 import com.phudnguyen.dusttracker.fragment.LoginFragment;
 import com.phudnguyen.dusttracker.http.HttpHelper;
+import com.phudnguyen.dusttracker.model.Group;
 import com.phudnguyen.dusttracker.model.LoginResponse;
 import com.phudnguyen.dusttracker.service.LocationUpdateService;
+import com.phudnguyen.dusttracker.utils.AppPrefs;
 
-public class MainActivity extends AppCompatActivity implements LoginFragment.LoginFragmentInteractionListener, GroupDetailsFragment.GroupDetailsFragmentListener {
+import org.jetbrains.annotations.NotNull;
+
+public class MainActivity extends AppCompatActivity implements LoginFragment.LoginFragmentInteractionListener, GroupDetailsFragment.GroupDetailsFragmentListener,
+        CreateGroupFragment.CreateGroupFragmentListener, JoinGroupFragment.JoinGroupFragmentListener {
 
     public static final int LOCATION_REQUEST_CODE = 100;
 
@@ -36,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     }
 
     private void startLocationUpdateService() {
-        String groupId = getSharedPreferences("appPrefs", MODE_PRIVATE).getString("currentGroupId", null);
+        String groupId = AppPrefs.getGroupId(this);
         if (groupId == null) {
             return;
         }
@@ -56,21 +64,20 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
         if (checkLocationPermission()) {
             startLocationUpdateService();
         }
-        String savedToken = getSharedPreferences("appPrefs", MODE_PRIVATE)
-                .getString("JWT", null);
+        String savedToken = AppPrefs.getJWT(this);
         if (savedToken == null) {
-            getSupportFragmentManager().beginTransaction()
+            getFragmentTransaction()
                     .replace(R.id.fragment_placeholder, new LoginFragment(), LoginFragment.class.getSimpleName())
                     .commit();
         } else {
             HttpHelper.JWT.set(savedToken);
-            String groupId = getSharedPreferences("appPrefs", MODE_PRIVATE).getString("currentGroupId", null);
+            String groupId = AppPrefs.getGroupId(this);
             if (groupId != null) {
-                getSupportFragmentManager().beginTransaction()
+                getFragmentTransaction()
                         .replace(R.id.fragment_placeholder, GroupDetailsFragment.newInstance(groupId), GroupDetailsFragment.class.getSimpleName())
                         .commit();
             } else {
-                getSupportFragmentManager().beginTransaction()
+                getFragmentTransaction()
                         .replace(R.id.fragment_placeholder, new JoinGroupFragment(), JoinGroupFragment.class.getSimpleName())
                         .commit();
             }
@@ -95,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     }
 
     private void doLeaveGroup() {
-        getSharedPreferences("appPrefs", Context.MODE_PRIVATE).edit().remove("currentGroupId").apply();
+        AppPrefs.setGroupId(this, null);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_placeholder, new JoinGroupFragment(), JoinGroupFragment.class.getName())
                 .commit();
@@ -135,13 +142,8 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
-            // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
                 new AlertDialog.Builder(this)
                         .setTitle("LocationInfo Request")
                         .setMessage("Grant permission to access location")
@@ -155,10 +157,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                         })
                         .create()
                         .show();
-
-
             } else {
-                // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         LOCATION_REQUEST_CODE);
@@ -179,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
     @Override
     public void onLoginSuccess(LoginResponse response) {
-        getSupportFragmentManager().beginTransaction()
+        getFragmentTransaction()
                 .replace(R.id.fragment_placeholder, new JoinGroupFragment(), JoinGroupFragment.class.getName())
                 .commit();
     }
@@ -187,5 +186,38 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     @Override
     public void onGroupLoadedSuccessfully() {
         startLocationUpdateService();
+    }
+
+    @Override
+    public void onCreateGroupSuccess(Group group) {
+        showGroupDetails(group);
+    }
+
+    @Override
+    public void onCreateGroupClick() {
+        getFragmentTransaction()
+                .replace(R.id.fragment_placeholder, new CreateGroupFragment(), CreateGroupFragment.class.getName())
+                .addToBackStack(CreateGroupFragment.class.getName())
+                .commit();
+    }
+
+    @Override
+    public void onJoinGroupSuccess(Group group) {
+        showGroupDetails(group);
+    }
+
+    private void showGroupDetails(Group group) {
+        getSupportFragmentManager()
+                .popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        getFragmentTransaction()
+                .replace(R.id.fragment_placeholder, GroupDetailsFragment.newInstance(group.getId()), GroupDetailsFragment.class.getName())
+                .commit();
+    }
+
+    @NotNull
+    private FragmentTransaction getFragmentTransaction() {
+        return getSupportFragmentManager()
+                .beginTransaction()
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
     }
 }
